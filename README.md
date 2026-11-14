@@ -22,7 +22,7 @@ Enable **Minecraft**, select a chat, and open its icon in the right canvas rail.
 4. If missing, install [Minecraft Launcher](https://www.minecraft.net/download), open Java Edition once, then close the launcher. Install [Node.js 22.16+ with npm](https://nodejs.org/en/download) if Setup requests it, then restart Agent Zero Launcher.
 5. Select your Minecraft version and click **Install profile**. For Realms, choose the Realm's version. This installs Fabric Loader, Fabric API, and MCPFabric into a new **Agent Zero <version>** profile. It also installs a missing MCP server when Node/npm is available.
 6. Click **Open Minecraft Launcher**, select that Agent Zero profile, and click **Play**. Microsoft sign-in, game ownership checks, any launcher warning, game downloads, and Java runtime provisioning stay in the official launcher.
-7. Join a world, then click **Connect** in Agent Zero and enter your request.
+7. For an existing profile, press **F3+P** in-game once if needed so **Pause on lost focus** is disabled; new profiles created by this plugin already use that setting. Join a world, then click **Connect** in Agent Zero and enter your request.
 
 Existing CurseForge profiles with Fabric and MCPFabric still work with Connect. Automatic profile creation uses the official Minecraft Launcher, to preserve existing installations. No Minecraft access token or model API key needs copying into the plugin.
 
@@ -58,6 +58,21 @@ Connect starts the companion. Disconnect cancels the task, releases game control
 
 The **Models** setting selects an Agent Zero model preset; it does not select a Minecraft installation. Plugin settings default to **Inherit current chat**. Choose an existing preset to override it for Minecraft. All model slots and authentication resolve through Agent Zero: existing Codex OAuth or provider API keys are reused. The plugin does not select a premium service tier or require a separate model login. Usage follows your configured provider pricing or subscription limits. Avoid running another Minecraft controller at the same time.
 
+## In-game requests and settings
+
+With **In-game requests Ã‚Â· @a0** enabled, select an Agent Zero chat and click Connect. Type `@a0` followed by your request in Minecraft chat. The relay uses the chat selected at connection time and the same model-preset settings as panel requests. Reconnect to bind another chat. Only your own player chat is accepted; `@Codex`, `@ai`, whispers, other players, and messages sent before connection are ignored. Requests received while busy are rejected with local feedback instead of queued or replayed. Completion feedback is local to your Minecraft client; your typed request still follows the server's normal chat visibility. This is the plugin's native relay and does not require Codex CLI.
+
+Minecraft settings provide:
+
+- **Models**: inherit the bound chat or choose an existing preset.
+- **Close pause menu automatically**: enabled by default. Resumes at request start and before player actions or screenshots. It only closes an in-world pause screen, respects MCPFabric's AI pause switch, and leaves chat, inventories, death screens, and world-selection screens alone.
+- **Verify builds with screenshots**: enabled by default. Instructs the agent to combine block readback with a screenshot inspected through vision after changing blocks. This requires a vision-capable preset; it does not replace authoritative block readback.
+- **In-game requests Ã‚Â· @a0**: enables the relay while connected. Turning it off discards pending chat requests. Re-enabling starts with fresh messages.
+
+Generated profiles start with `pauseOnLostFocus:false`, so Minecraft keeps rendering while Agent Zero is in front. Existing profile preferences are preserved; use F3+P in-game once when the plugin reports that Minecraft immediately paused again. This preference is separate from the automatic menu-closing setting.
+
+The Setup accordion preserves your open/closed choice while status refreshes.
+
 ## Transport and cleanup
 
 Tool requests, status, and results cross the existing Launcher gateway. The Windows companion uses a private local queue; the server never reads or writes that queue. Large results, including screenshots, use bounded chunks with size and SHA-256 verification, capped at 32 MiB. Results are saved to Agent Zero's normal chat-media storage for vision. Failed or uncertain game actions are never replayed automatically.
@@ -85,11 +100,12 @@ python -m unittest discover -s tests -p test_host.py
 python -m unittest discover -s tests -p test_profiles.py
 node tests/test_store.mjs
 node tests/test_setup_store.mjs
+node tests/test_config_store.mjs
 ```
 
 Run the remaining Python tests from Agent Zero's framework environment, with this plugin installed as `usr/plugins/minecraft_control`. They exercise native model resolution, task scope, lifecycle hooks, authorization, and gateway transport. CI runs the standalone host/UI tests; it does not launch Minecraft or require provider credentials.
 
-Verified on Windows with Minecraft 26.3, Fabric Loader 0.20.1, Fabric API 0.166.2+26.3, MCPFabric 0.10.0+26.3, and Java 25 metadata. The regression suite covers preserved profiles/worlds, backups, repeat installation, interrupted registration, checksums, path bounds, launcher races, authorization, task isolation, lease expiry, and chunked screenshot transfer. Native Codex OAuth and an OpenRouter preset have both been exercised. A final request started from the Minecraft panel using the Default preset built a three-block stone marker in the generated profile; independent block readback confirmed all three placements. Screenshot transfer and vision loading succeeded, but the pause menu obscured the game image, so build verification relied on block data.
+Verified on Windows with Minecraft 26.3, Fabric Loader 0.20.1, Fabric API 0.166.2+26.3, MCPFabric 0.10.0+26.3, and Java 25 metadata. The regression suite covers preserved profiles/worlds, backups, repeat installation, interrupted registration, checksums, path bounds, launcher races, authorization, task isolation, lease expiry, and chunked screenshot transfer. Native Codex OAuth and an OpenRouter preset have both been exercised. A final request started from the Minecraft panel using the Default preset built a three-block stone marker in the generated profile; independent block readback confirmed all three placements. A native `@a0` request using Default also placed one stone through normal player interaction, verified by independent block readback, screenshot transfer, and vision loading. The 0.6.0 live checks additionally confirmed that the screenshot tool closes a real pause menu and returns the unobscured world, settings survive saving and reopening, and the Setup accordion retains both open and closed states across status polls. The automated suite includes 51 Python tests across the framework and Windows environments and three Node UI checks.
 
 Agent Zero and Minecraft were tested on separate container/Windows filesystems with no shared-folder transport. An actual public VPS deployment, internet latency, and TLS/reverse-proxy configuration have not been tested.
 

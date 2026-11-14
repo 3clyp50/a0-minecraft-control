@@ -10,7 +10,7 @@ const allowed = JSON.parse(fs.readFileSync(new URL('allowed.json', import.meta.u
 const client = new Client({name: 'agent-zero-minecraft', version: '0.2.0'});
 try {
     await client.connect(new StdioClientTransport({command: process.execPath, args: [request.server],
-        env: {...process.env, MCPFABRIC_TOOLSETS:'info,player,vision,world,chat,session,events', MCPFABRIC_SCRIPTS:'off', MCPFABRIC_AGENT:'off'}}));
+        env: {...process.env, MCPFABRIC_TOOLSETS:'info,player,vision,world,chat,session,events', MCPFABRIC_SCRIPTS:'off', MCPFABRIC_AGENT:'off', MCPFABRIC_CHANNEL_PREFIX:'@a0'}}));
     if (request.tool === 'list') {
         const result = await client.listTools();
         console.log(JSON.stringify(result.tools.filter(tool => allowed.includes(tool.name))));

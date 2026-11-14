@@ -69,7 +69,7 @@ def dispatch(root, request):
         (root / 'lease.json').unlink(missing_ok=True)
         (root / 'stop').unlink(missing_ok=True)
         (root / 'stopped').unlink(missing_ok=True)
-        write(root / 'host-lease.json', {'token':token, 'expires':time.time()+30})
+        write(root / 'host-lease.json', {'token':token, 'expires':time.time()+30, 'chat_enabled':request.get('chat_enabled') is True})
         write(root / 'owner.json', {'token':token})
         (root / 'enabled').touch()
         with (root / 'host.log').open('w', encoding='utf-8') as log:
@@ -94,7 +94,7 @@ def dispatch(root, request):
         raise ValueError('Connection expired; reconnect from the Minecraft panel')
     if action == 'pulse':
         if (root / 'stopped').exists(): raise ValueError('Windows companion stopped')
-        write(root / 'host-lease.json', {'token':token, 'expires':time.time()+30})
+        write(root / 'host-lease.json', {'token':token, 'expires':time.time()+30, 'chat_enabled':request.get('chat_enabled') is True})
         return read(root / 'status.json', {})
     if action in ('stop', 'disconnect', 'uninstall'):
         task = read(root / 'lease.json', {})
@@ -113,11 +113,16 @@ def dispatch(root, request):
             for file in root.glob('transfer-*.bin'): file.unlink(missing_ok=True)
             if action == 'uninstall': shutil.rmtree(root)
         return {'ok':True}
+    if action == 'notice':
+        text = request.get('text')
+        if not isinstance(text, str) or not 0 < len(text) <= 500: raise ValueError('Invalid local message')
+        return companion['rpc']('chat.showLocal', {'text':'a0: ' + text})
     if action == 'begin':
         if (root / 'stop').exists(): raise ValueError('Minecraft controls are still stopping; try again shortly')
         run = request.get('run')
         if not isinstance(run, str) or not re.fullmatch('[a-f0-9]{32}', run): raise ValueError('Invalid task')
-        write(root / 'lease.json', {'run':run})
+        write(root / 'lease.json', {'run':run, 'auto_resume':request.get('auto_resume') is True})
+        if request.get('auto_resume') is True: companion['resume_pause']()
         return {'ok':True}
     if action == 'tool':
         run = request.get('run')

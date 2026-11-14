@@ -5,9 +5,9 @@
 
   <title>Minecraft</title>
 
-  <script type="module" src="/plugins/minecraft_control/webui/store.js?v=0.5.2"></script>
+  <script type="module" src="/plugins/minecraft_control/webui/store.js?v=0.6.0"></script>
 
-  <link rel="stylesheet" href="/plugins/minecraft_control/webui/style.css?v=0.5.2">
+  <link rel="stylesheet" href="/plugins/minecraft_control/webui/style.css?v=0.6.0">
 
 </head>
 
@@ -51,7 +51,7 @@
 
   </section>
 
-  <details class="mc-setup" :open="!$store.minecraft.state.online">
+  <details class="mc-setup" :open="$store.minecraft.setupOpen" @toggle="$store.minecraft.setupOpen = $event.target.open">
     <summary>Setup</summary>
     <div class="mc-profile">
       <strong>Minecraft profile</strong>
@@ -127,6 +127,7 @@
     <textarea id="mc-request" x-model="$store.minecraft.prompt" maxlength="12000" rows="3" :disabled="$store.minecraft.state.busy"></textarea>
 
     <div class="mc-actions"><span class="mc-muted" x-text="($store.minecraft.state.busy ? $store.minecraft.state.preset : $store.minecraft.state.model_label) || 'Inherit current chat'"></span>
+    <span class="mc-muted" x-show="$store.minecraft.state.online && $store.minecraft.state.chat_alias" x-text="$store.minecraft.state.chat_alias"></span>
 
       <button type="button" class="button" :disabled="!$store.minecraft.state.online || $store.minecraft.sending" @click="$store.minecraft.send('stop')"><x-icon name="stop"></x-icon>Stop</button>
 

@@ -167,11 +167,12 @@ async def profile_operation(action, version=None):
     return {'ok':True, 'setup':deepcopy(SETUP)}
 
 
-async def connect():
+async def connect(context_id=''):
     global ACTIVE, LAST, WATCHER, GAME, TOOLS, SETUP, RECEIVED
     with LOCK:
         if ACTIVE: raise ValueError('Minecraft is already connected or starting')
         connection = new_connection()
+        connection['context_id'] = context_id
         ACTIVE = connection
         LAST = connection
     try:
@@ -180,7 +181,7 @@ async def connect():
             with LOCK:
                 if ACTIVE is connection: ACTIVE = None
             return {'ok':False, 'setup':SETUP}
-        result = await request(connection, {'action':'connect'}, timeout=25)
+        result = await request(connection, {'action':'connect', 'chat_enabled':chat_enabled(connection)}, timeout=25)
         with LOCK:
             if ACTIVE is not connection: raise ValueError('Connection cancelled')
             connection['online'] = True
@@ -196,6 +197,12 @@ async def connect():
         raise
 
 
+def chat_enabled(connection):
+    from agent import AgentContext
+    parent = AgentContext.get(connection.get('context_id', ''))
+    return bool(parent and (plugins.get_plugin_config('minecraft_control', agent=parent.agent0) or {}).get('chat_relay', True) is True)
+
+
 async def maintain(connection):
     global GAME, RECEIVED
     try:
@@ -203,9 +210,11 @@ async def maintain(connection):
             await asyncio.sleep(5)
             if ACTIVE is not connection: return
             if 'minecraft_control' not in plugins.get_enabled_plugins(None): return
-            result = await request(connection, {'action':'pulse'}, session=1, timeout=10)
+            result = await request(connection, {'action':'pulse', 'chat_enabled':chat_enabled(connection)}, session=1, timeout=10)
             with LOCK:
                 if ACTIVE is connection: GAME, RECEIVED = result, time.monotonic()
+            from usr.plugins.minecraft_control.helpers import runtime
+            await runtime.receive_chat(connection, result)
     finally:
         await disconnect(connection)
 

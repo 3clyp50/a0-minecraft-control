@@ -35,4 +35,20 @@ class RuntimeTest(unittest.IsolatedAsyncioTestCase):
             await runtime.submit('stop','','')
         with self.assertRaises(ValueError):await runtime.call_tool(self.context,'get_status',{})
 
+    async def test_chat_is_bound_once_and_old_connections_are_ignored(self):
+        connection={'context_id':'parent'};state={'chat_epoch':'epoch','requests':[{'id':1,'text':'check status'}]}
+        with patch.object(runtime.launcher,'ACTIVE',connection),patch.object(runtime.launcher,'chat_enabled',return_value=True),patch.object(runtime,'submit',new_callable=AsyncMock) as submit:
+            await runtime.receive_chat(connection,state);await runtime.receive_chat(connection,state)
+            submit.assert_awaited_once_with('build','check status','parent',chat_reply=True)
+            await runtime.receive_chat({'context_id':'other'},state);self.assertEqual(submit.await_count,1)
+
+    async def test_disabled_and_busy_chat_are_not_replayed(self):
+        connection={'context_id':'parent'};state={'chat_epoch':'epoch','requests':[{'id':1,'text':'check'}]}
+        with patch.object(runtime.launcher,'ACTIVE',connection),patch.object(runtime.launcher,'chat_enabled',return_value=False),patch.object(runtime,'submit',new_callable=AsyncMock) as submit:
+            await runtime.receive_chat(connection,state);submit.assert_not_awaited()
+        state['requests']=[{'id':2,'text':'another request'}]
+        with patch.object(runtime.launcher,'ACTIVE',connection),patch.object(runtime.launcher,'chat_enabled',return_value=True),patch.object(runtime,'submit',new_callable=AsyncMock,side_effect=ValueError('Busy')) as submit,patch.object(runtime,'notice',new_callable=AsyncMock) as notice:
+            await runtime.receive_chat(connection,state);await runtime.receive_chat(connection,state)
+            self.assertEqual(submit.await_count,1);notice.assert_awaited_once_with('Busy')
+
 if __name__=='__main__':unittest.main()

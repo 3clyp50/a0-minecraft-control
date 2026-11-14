@@ -1,1 +1,4 @@
 model_preset: ""
+auto_resume: true
+verify_screenshot: true
+chat_relay: true

@@ -37,11 +37,14 @@ class ProfilesTest(unittest.TestCase):
   self.assertEqual(updated['profiles']['old'],self.original['profiles']['old']);self.assertEqual(updated['settings'],self.original['settings'])
   self.assertEqual(len(updated['profiles']),2);self.assertEqual(next(self.minecraft.glob('*.bak')).read_bytes(),self.original_bytes)
   entry=next(v for k,v in updated['profiles'].items() if k!='old');self.assertEqual(Path(entry['gameDir']),self.owned/'26.3/game')
+  self.assertEqual((Path(entry['gameDir'])/'options.txt').read_text(),'pauseOnLostFocus:false\n')
   self.assertTrue((Path(entry['gameDir'])/'mods/mcpfabric.jar').is_file());self.assertEqual(result['installed'][0]['name'],'Agent Zero 26.3')
   self.assertEqual(json.loads((self.minecraft/'versions'/entry['lastVersionId']/(entry['lastVersionId']+'.json')).read_bytes())['javaVersion']['majorVersion'],25)
  def test_repeat_install_keeps_worlds_and_does_not_duplicate(self):
   profiles.install(self.root,'26.3');world=self.owned/'26.3/game/saves/World/level.dat';world.parent.mkdir(parents=True);world.write_bytes(b'world')
+  options=self.owned/'26.3/game/options.txt';options.write_text('pauseOnLostFocus:true\n')
   before=self.config.read_bytes();profiles.install(self.root,'26.3')
+  self.assertEqual(options.read_text(),'pauseOnLostFocus:true\n')
   self.assertEqual(self.config.read_bytes(),before);self.assertEqual(world.read_bytes(),b'world');self.assertEqual(len(list(self.minecraft.glob('*.bak'))),1)
  def test_interrupted_registration_can_be_retried(self):
   with patch.object(profiles,'register',side_effect=ValueError('launcher opened')):

@@ -193,6 +193,7 @@ def install(root, version):
     stage=Path(tempfile.mkdtemp(prefix='.install-',dir=profiles))
     try:
         mods=stage/'game/mods';mods.mkdir(parents=True)
+        (stage/'game/options.txt').write_text('pauseOnLostFocus:false\n',encoding='utf-8')
         installed=[install_mod(api,mods,'fabric-api'),install_mod(bridge,mods,'mcpfabric')]
         vanilla=data['vanilla'][version]
         base_json=stage/'vanilla.json'

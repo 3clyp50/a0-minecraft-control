@@ -15,6 +15,7 @@ class Control(ApiHandler):
         if action == 'status':
             data = status()
             data['launcher'] = launcher.status()
+            data['chat_alias'] = '@a0' if launcher.ACTIVE and launcher.chat_enabled(launcher.ACTIVE) else ''
             context_id = input.get('context_id', '')
             parent = AgentContext.get(context_id) if isinstance(context_id, str) else None
             config = plugins.get_plugin_config('minecraft_control', agent=parent.agent0 if parent else None) or {}
@@ -29,7 +30,9 @@ class Control(ApiHandler):
                 from usr.plugins.minecraft_control.hooks import prepare_host
                 return await prepare_host(install_server=action == 'install_server')
             if action == 'connect':
-                return await launcher.connect()
+                context_id = input.get('context_id', '')
+                if not isinstance(context_id, str): raise ValueError('Invalid chat context')
+                return await launcher.connect(context_id)
             if action == 'disconnect':
                 return await launcher.disconnect()
             return await submit(action, input.get('prompt', ''), input.get('context_id', ''))
