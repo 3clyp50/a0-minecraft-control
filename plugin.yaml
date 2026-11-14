@@ -1,0 +1,7 @@
+name: minecraft_control
+title: Minecraft
+description: Minecraft control through Agent Zero and MCPFabric on a local Windows host.
+version: 0.5.2
+settings_sections: [agent]
+per_project_config: false
+per_agent_config: false

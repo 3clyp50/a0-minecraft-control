@@ -1,0 +1,56 @@
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tomllib
+
+PACKAGE = 'mcpfabric-mcp-server@0.10.0'
+
+
+def locate(root):
+    node = shutil.which('node') or str(Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'nodejs/node.exe')
+    server = root / 'mcp/node_modules/mcpfabric-mcp-server/dist/index.js'
+    if not server.is_file():
+        try:
+            entry = tomllib.loads((Path.home() / '.codex/config.toml').read_text())['mcp_servers']['mcpfabric']
+            candidate = Path(entry['args'][0])
+            if candidate.is_file() and candidate.name == 'index.js' and candidate.parent.parent.name == 'mcpfabric-mcp-server':
+                server = candidate
+            command = Path(entry['command'])
+            if not Path(node).is_file() and command.is_file() and command.name.lower() == 'node.exe':
+                node = str(command)
+        except (OSError, ValueError, KeyError, IndexError, TypeError):
+            pass
+    return node, server
+
+
+def inspect(root):
+    node, server = locate(root)
+    version = ''
+    try:
+        version = subprocess.check_output([node, '--version'], text=True, timeout=10, creationflags=subprocess.CREATE_NO_WINDOW).strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    numbers = re.match(r'v(\d+)\.(\d+)', version)
+    node_ready = bool(numbers and tuple(map(int, numbers.groups())) >= (22, 16))
+    npm = Path(node).parent / 'node_modules/npm/bin/npm-cli.js'
+    return {'node': node_ready, 'node_version': version, 'server': server.is_file(),
+            'can_install': node_ready and npm.is_file(), 'package': PACKAGE,
+            'discovery': (Path.home() / '.mcpfabric/bridge.json').is_file()}
+
+
+def install(root):
+    status = inspect(root)
+    if not status['can_install']:
+        raise ValueError('Install Node.js 22.16 or newer with npm, restart Launcher, then check setup again')
+    node, _ = locate(root)
+    npm = Path(node).parent / 'node_modules/npm/bin/npm-cli.js'
+    result = subprocess.run([node, str(npm), 'install', '--prefix', str(root / 'mcp'), '--ignore-scripts',
+                             '--no-audit', '--no-fund', '--registry=https://registry.npmjs.org', PACKAGE],
+                            capture_output=True, text=True, timeout=150, creationflags=subprocess.CREATE_NO_WINDOW)
+    if result.returncode:
+        (root / 'install.log').write_text(result.stderr[-16000:], encoding='utf-8')
+        raise ValueError('MCP server installation failed; see install.log in the Windows plugin cache')
+    return inspect(root)

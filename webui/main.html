@@ -1,0 +1,147 @@
+<html>
+
+<head>
+  <meta charset="UTF-8">
+
+  <title>Minecraft</title>
+
+  <script type="module" src="/plugins/minecraft_control/webui/store.js?v=0.5.2"></script>
+
+  <link rel="stylesheet" href="/plugins/minecraft_control/webui/style.css?v=0.5.2">
+
+</head>
+
+<body>
+
+<div x-data>
+
+<template x-if="$store.minecraft">
+
+<section class="mc-panel" x-init="$store.minecraft.onOpen()" x-destroy="$store.minecraft.cleanup()">
+
+  <header class="mc-header">
+
+    <img src="/plugins/minecraft_control/webui/thumbnail.webp" width="40" height="40" alt="">
+
+    <div><strong>Minecraft</strong><span class="mc-muted" x-text="$store.minecraft.state.game?.minecraftVersion || 'MCPFabric'"></span></div>
+
+    <button class="button icon-button" aria-label="Minecraft settings" title="Settings" @click="$store.minecraft.settings()"><x-icon name="settings"></x-icon></button>
+
+    <button class="button icon-button" aria-label="Refresh" title="Refresh" @click="$store.minecraft.refresh()"><x-icon name="refresh"></x-icon></button>
+
+  </header>
+
+  <div class="mc-status"><span :class="{'mc-online': $store.minecraft.state.online}" x-text="$store.minecraft.state.online ? 'Host connected' : 'Host offline'"></span><span x-text="$store.minecraft.state.online && $store.minecraft.state.game?.minecraftVersion ? 'Minecraft connected' : 'Minecraft offline'"></span><span x-text="$store.minecraft.state.phase || 'Idle'"></span></div>
+
+  <div class="mc-connection">
+
+    <button class="button" x-show="!$store.minecraft.state.online" :disabled="$store.minecraft.sending || !$store.minecraft.state.launcher?.ready" @click="$store.minecraft.send('connect')" x-text="$store.minecraft.action === 'connect' ? 'Connectingâ€¦' : 'Connect'"></button>
+
+    <button class="button" x-show="$store.minecraft.state.online" :disabled="$store.minecraft.sending" @click="$store.minecraft.send('disconnect')">Disconnect</button>
+
+  </div>
+
+  <section class="mc-setup" x-show="!$store.minecraft.state.online">
+
+    <strong>Connect Minecraft</strong>
+
+    <ol><li>Open this instance in Agent Zero Launcher.</li><li>Enable Host access: Files, Read &amp; write, and Code execution.</li><li>Complete Setup below, join a Minecraft world, then click Connect.</li></ol>
+
+    <p x-show="$store.minecraft.state.launcher?.multiple_hosts">Keep one Launcher host connected to this instance.</p>
+
+  </section>
+
+  <details class="mc-setup" :open="!$store.minecraft.state.online">
+    <summary>Setup</summary>
+    <div class="mc-profile">
+      <strong>Minecraft profile</strong>
+      <p x-show="!$store.minecraft.state.setup?.profiles?.launcher_ready">Install <a href="https://www.minecraft.net/download" target="_blank" rel="noopener noreferrer">Minecraft Launcher</a>, open Java Edition once, then close the launcher.</p>
+      <label for="mc-version">Minecraft version</label>
+      <select id="mc-version" x-model="$store.minecraft.version" :disabled="$store.minecraft.sending || $store.minecraft.state.online">
+        <option value="" :selected="!$store.minecraft.version">Choose a version</option>
+        <template x-for="version in ($store.minecraft.state.setup?.profiles?.versions || [])" :key="version"><option :value="version" :selected="version === $store.minecraft.version" x-text="version"></option></template>
+      </select>
+      <p>For Realms, choose the Realm's version. Close Minecraft Launcher before installing.</p>
+      <div class="mc-actions">
+        <button class="button" :disabled="$store.minecraft.sending || $store.minecraft.state.online || !$store.minecraft.version || !$store.minecraft.state.setup?.profiles?.launcher_ready || !!$store.minecraft.profile()" @click="$store.minecraft.send('install_profile')" x-text="$store.minecraft.action === 'install_profile' ? 'Installing profileâ€¦' : ($store.minecraft.profile() ? 'Profile installed' : 'Install profile')"></button>
+        <button class="button" :disabled="$store.minecraft.sending || !$store.minecraft.state.launcher?.ready || $store.minecraft.state.online" @click="$store.minecraft.send('open_launcher')">Open Minecraft Launcher</button>
+      </div>
+      <p x-show="!$store.minecraft.profile()">Installs Fabric, Fabric API, and MCPFabric in a separate Agent Zero profile.</p>
+      <p>AI control requires this modded profile. Your default Minecraft profile stays unchanged.</p>
+      <p x-show="$store.minecraft.profile()">Select <strong x-text="$store.minecraft.profile()?.name"></strong> in Minecraft Launcher and click Play. Join a world, then Connect here.</p>
+      <p x-show="$store.minecraft.profile()">Minecraft's modified-installation notice is expected for this Fabric profile.</p>
+    </div>
+    <div class="mc-actions">
+      <button class="button" :disabled="$store.minecraft.sending || !$store.minecraft.state.launcher?.ready || $store.minecraft.state.online" @click="$store.minecraft.send('profile_versions')" x-text="$store.minecraft.action === 'profile_versions' ? 'Checking setupâ€¦' : 'Check setup'"></button>
+      <button class="button" x-show="$store.minecraft.state.setup?.can_install && !$store.minecraft.state.setup?.server" :disabled="$store.minecraft.sending || $store.minecraft.state.online" @click="$store.minecraft.send('install_server')" x-text="$store.minecraft.action === 'install_server' ? 'Installing serverâ€¦' : 'Install MCP server'"></button>
+    </div>
+    <dl x-show="$store.minecraft.state.setup?.package">
+      <dt>Node.js</dt><dd x-text="$store.minecraft.state.setup?.node ? $store.minecraft.state.setup.node_version : 'Missing or too old'"></dd>
+      <dt>MCP server</dt><dd x-text="$store.minecraft.state.setup?.server ? 'Installed' : 'Not installed'"></dd>
+      <dt>Minecraft mod</dt><dd x-text="$store.minecraft.state.game?.mod ? 'Connected' : ($store.minecraft.state.setup?.discovery ? 'Detected; connect to verify' : 'Launch the Agent Zero profile')"></dd>
+    </dl>
+    <p x-show="!$store.minecraft.state.setup?.node">Install <a href="https://nodejs.org/en/download" target="_blank" rel="noopener noreferrer">Node.js 22.16+</a> with npm, then restart Agent Zero Launcher and check setup.</p>
+    <p x-show="$store.minecraft.state.online">Disconnect to change setup.</p>
+    <a href="https://github.com/denfry/mcpfabric#quick-start" target="_blank" rel="noopener noreferrer">Manual MCPFabric setup</a>
+  </details>
+  <p class="mc-setup" x-show="$store.minecraft.state.online && !$store.minecraft.state.player?.dimension">Launch Minecraft with MCPFabric, then join a world.</p>
+
+  <dl class="mc-stats" x-show="$store.minecraft.state.online">
+
+    <div><dt>Position</dt><dd x-text="$store.minecraft.coordinates()"></dd></div>
+
+    <div><dt>Health</dt><dd x-text="$store.minecraft.state.player?.health ?? 'â€”'"></dd></div>
+
+    <div><dt>Food</dt><dd x-text="$store.minecraft.state.player?.food ?? 'â€”'"></dd></div>
+
+  </dl>
+
+  <nav class="mc-tabs" aria-label="Minecraft views" x-show="$store.minecraft.state.online">
+
+    <button :class="{'active': $store.minecraft.tab === 'console'}" @click="$store.minecraft.tab = 'console'">Console</button>
+
+    <button :class="{'active': $store.minecraft.tab === 'inventory'}" @click="$store.minecraft.tab = 'inventory'">Inventory</button>
+
+  </nav>
+
+  <div class="mc-content" x-show="$store.minecraft.state.online">
+
+    <div class="mc-output" x-show="$store.minecraft.tab === 'console'" x-html="$store.minecraft.outputHtml()" aria-live="polite"></div>
+
+    <div x-show="$store.minecraft.tab === 'inventory'">
+
+      <table><thead><tr><th>Slot</th><th>Item</th><th>Count</th></tr></thead><tbody>
+
+        <template x-for="(item, index) in $store.minecraft.items()" :key="index"><tr><td x-text="item.slot ?? index"></td><td x-text="item.id || item.item || item.name"></td><td x-text="item.count"></td></tr></template>
+
+      </tbody></table>
+
+    </div>
+
+  </div>
+
+  <form class="mc-composer" x-show="$store.minecraft.state.online" @submit.prevent="$store.minecraft.send('build')">
+
+    <label for="mc-request">Request</label>
+
+    <textarea id="mc-request" x-model="$store.minecraft.prompt" maxlength="12000" rows="3" :disabled="$store.minecraft.state.busy"></textarea>
+
+    <div class="mc-actions"><span class="mc-muted" x-text="($store.minecraft.state.busy ? $store.minecraft.state.preset : $store.minecraft.state.model_label) || 'Inherit current chat'"></span>
+
+      <button type="button" class="button" :disabled="!$store.minecraft.state.online || $store.minecraft.sending" @click="$store.minecraft.send('stop')"><x-icon name="stop"></x-icon>Stop</button>
+
+      <button type="submit" class="button" :disabled="!$store.minecraft.state.online || $store.minecraft.state.busy || !$store.minecraft.prompt.trim() || $store.minecraft.sending"><x-icon name="play_arrow"></x-icon>Run</button>
+
+    </div>
+
+  </form>
+
+</section>
+
+</template>
+
+</div>
+
+</body>
+
+</html>
