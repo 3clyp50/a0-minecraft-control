@@ -19,7 +19,7 @@ CHUNK = 48000
 def root_for(instance):
     if not isinstance(instance, str) or not re.fullmatch('[a-f0-9]{32}', instance):
         raise ValueError('Invalid plugin instance')
-    base = (Path(os.environ['LOCALAPPDATA']) / 'AgentZero/Minecraft').resolve()
+    base = runpy.run_path(str(Path(__file__).with_name('paths.py')))['data_root']('Minecraft')
     root = (base / instance).resolve()
     if root.parent != base:
         raise ValueError('Invalid plugin cache path')
@@ -59,7 +59,7 @@ def dispatch(root, request):
     if action == 'connect':
         previous = read(root / 'host-lease.json', {})
         if previous.get('expires', 0) > time.time() and not (root / 'stopped').exists():
-            raise ValueError('This Windows companion is already connected')
+            raise ValueError('This host companion is already connected')
         if not dependencies['inspect'](root)['server']:
             raise ValueError('Install the MCP server in Setup first')
         if (root / 'worker.lock').exists() and not (root / 'stopped').exists():
@@ -74,7 +74,8 @@ def dispatch(root, request):
         (root / 'enabled').touch()
         with (root / 'host.log').open('w', encoding='utf-8') as log:
             subprocess.Popen([sys.executable, str(root / 'host/companion.py'), '--host-token', token],
-                             stdin=subprocess.DEVNULL, stdout=log, stderr=log, creationflags=subprocess.CREATE_NO_WINDOW)
+                             stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), start_new_session=os.name != 'nt')
         for _ in range(60):
             state = read(root / 'status.json', {})
             if state.get('host_token') == token:
@@ -82,7 +83,7 @@ def dispatch(root, request):
             if (root / 'stopped').exists(): break
             time.sleep(.25)
         (root / 'enabled').unlink(missing_ok=True)
-        raise ValueError('Companion startup failed; check host.log in the Windows plugin cache')
+        raise ValueError('Companion startup failed; check host.log in the host plugin cache')
 
     lease = read(root / 'host-lease.json', {})
     if action == 'uninstall' and not lease and read(root / 'owner.json', {}).get('token') == token:
@@ -93,7 +94,7 @@ def dispatch(root, request):
     if action not in ('disconnect', 'uninstall', 'stop') and lease.get('expires', 0) <= time.time():
         raise ValueError('Connection expired; reconnect from the Minecraft panel')
     if action == 'pulse':
-        if (root / 'stopped').exists(): raise ValueError('Windows companion stopped')
+        if (root / 'stopped').exists(): raise ValueError('Host companion stopped')
         write(root / 'host-lease.json', {'token':token, 'expires':time.time()+30, 'chat_enabled':request.get('chat_enabled') is True})
         return read(root / 'status.json', {})
     if action in ('stop', 'disconnect', 'uninstall'):
@@ -141,7 +142,7 @@ def dispatch(root, request):
                     response = read(result)
                     if response.get('error'): raise ValueError(response['error'])
                     return response['result']
-                if (root / 'stopped').exists(): raise ValueError('Windows companion stopped')
+                if (root / 'stopped').exists(): raise ValueError('Host companion stopped')
                 time.sleep(.25)
             raise ValueError('Minecraft call timed out; verify game state before retrying')
         finally:
@@ -166,7 +167,7 @@ def respond(root, request):
     try:
         result = {'ok':True, 'result':dispatch(root, request)}
     except Exception as error:
-        result = {'ok':False, 'error':str(error) if isinstance(error, ValueError) else 'Windows operation failed; check plugin host logs'}
+        result = {'ok':False, 'error':str(error) if isinstance(error, ValueError) else 'Host operation failed; check plugin host logs'}
     raw = json.dumps(result).encode()
     if len(raw) > MAX_RESULT:
         raw = json.dumps({'ok':False,'error':'Minecraft result exceeds the transfer limit'}).encode()

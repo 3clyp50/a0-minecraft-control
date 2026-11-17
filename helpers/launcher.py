@@ -19,7 +19,7 @@ SESSIONS = [threading.Lock() for _ in range(3)]
 ACTIVE = LAST = WATCHER = None
 SETUP, GAME, TOOLS, RECEIVED = {}, {}, [], 0
 MAX_RESULT = 32 * 1024 * 1024
-HOST_FILES = ('companion.py', 'controller.py', 'dependencies.py', 'profiles.py', 'mcp-call.mjs', 'allowed.json')
+HOST_FILES = ('companion.py', 'controller.py', 'dependencies.py', 'profiles.py', 'paths.py', 'mcp-call.mjs', 'allowed.json')
 
 
 def gateway_sid():
@@ -52,15 +52,14 @@ def identity():
 
 def host_code(connection, request, deploy=False):
     payload = base64.b64encode(json.dumps({**request, 'token':connection['token']}).encode()).decode()
-    code = ['import os,json,base64,zlib,runpy', 'from pathlib import Path',
-            "assert os.name=='nt', 'Minecraft host requires Windows'",
-            "base=(Path(os.environ['LOCALAPPDATA'])/'AgentZero/Minecraft').resolve()",
+    code = [(Path(__file__).parents[1] / 'host/paths.py').read_text(encoding='utf-8'),
+            'import json,base64,zlib,runpy', "base=data_root('Minecraft')",
             f"root=(base/{connection['instance']!r}).resolve()",
             "assert root.parent==base, 'Invalid Minecraft cache path'"]
     if deploy:
         files = {name:(Path(__file__).parents[1] / 'host' / name).read_text(encoding='utf-8') for name in HOST_FILES}
         bundle = base64.b64encode(zlib.compress(json.dumps(files).encode())).decode()
-        code += ["root.mkdir(parents=True,exist_ok=True)", "(root/'host').mkdir(exist_ok=True)",
+        code += ["root.mkdir(mode=0o700,parents=True,exist_ok=True)", "(root/'host').mkdir(exist_ok=True)",
                  f"files=json.loads(zlib.decompress(base64.b64decode({bundle!r})))",
                  "for name,source in files.items():",
                  "    target=root/'host'/name",
@@ -111,7 +110,7 @@ def decode(packet, raw):
     if len(data) > MAX_RESULT or not inflater.eof or inflater.unused_data:
         raise ValueError('Minecraft result exceeds the transfer limit')
     response = json.loads(data)
-    if not response.get('ok'): raise ValueError(response.get('error', 'Windows operation failed'))
+    if not response.get('ok'): raise ValueError(response.get('error', 'Host operation failed'))
     return response['result']
 
 

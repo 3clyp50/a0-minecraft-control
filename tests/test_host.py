@@ -7,12 +7,10 @@ import time
 import unittest
 from unittest.mock import patch
 
-if os.name == 'nt':
-    spec = importlib.util.spec_from_file_location('companion', Path(__file__).parents[1] / 'host/companion.py')
-    companion = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(companion)
+spec = importlib.util.spec_from_file_location('companion', Path(__file__).parents[1] / 'host/companion.py')
+companion = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(companion)
 
-@unittest.skipUnless(os.name == 'nt', 'Windows host tests')
 class HostTest(unittest.TestCase):
     def test_host_lease_rejects_expiry_and_another_owner(self):
         with tempfile.TemporaryDirectory() as temp:

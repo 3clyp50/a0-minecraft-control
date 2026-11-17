@@ -1,8 +1,12 @@
 import asyncio
 import base64
+import contextlib
 import hashlib
+import io
 import json
 import os
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch,AsyncMock
 import zlib
@@ -33,6 +37,16 @@ class LauncherTest(unittest.IsolatedAsyncioTestCase):
         code=launcher.host_code({'instance':'a'*32,'token':'b'*32},{'action':'tool','params':{'text':"quotes ' and ` $()"}},deploy=True)
         compile(code,'<host>','exec')
         self.assertIn('LOCALAPPDATA',code);self.assertNotIn('/a0/',code);self.assertNotIn('host_directory',code)
+    def test_host_setup_deploys_and_runs_on_current_platform(self):
+        code=launcher.host_code({'instance':'a'*32,'token':'b'*32},{'action':'setup'},deploy=True)
+        with tempfile.TemporaryDirectory() as temp,patch.dict(os.environ,{'LOCALAPPDATA':temp,'XDG_DATA_HOME':temp}),patch.object(Path,'home',return_value=Path(temp)),patch('subprocess.check_output',return_value='v22.22.3\n'):
+            output=io.StringIO();scope={}
+            with contextlib.redirect_stdout(output):exec(code,scope)
+            data=json.loads(output.getvalue().split('=',1)[1])
+            result=launcher.decode(data,base64.b64decode(data['data']))
+            self.assertTrue(result['node']);self.assertFalse(result['server'])
+            self.assertTrue(scope['root'].is_relative_to(Path(temp)))
+            self.assertTrue(all((scope['root']/'host'/name).is_file() for name in launcher.HOST_FILES))
     def test_bad_digest_and_expansion_are_rejected(self):
         p=packet({'ok':1});raw=base64.b64decode(p['data'])
         self.assertEqual(launcher.decode(p,raw),{'ok':1})

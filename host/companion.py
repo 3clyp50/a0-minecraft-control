@@ -1,8 +1,7 @@
-"""Windows companion. No listener, credentials, or shell commands cross the spool."""
+"""Host companion. No listener, credentials, or shell commands cross the spool."""
 import argparse
 import http.client
 import json
-import msvcrt
 import os
 import re
 from pathlib import Path
@@ -104,7 +103,7 @@ class Companion:
         result = subprocess.run([self.node, str(Path(__file__).with_name('mcp-call.mjs'))],
             input=json.dumps({'server': self.server, 'tool': tool, 'params': params or {}}),
             capture_output=True, text=True, encoding='utf-8', timeout=35,
-            creationflags=subprocess.CREATE_NO_WINDOW)
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
         if result.returncode:
             raise ValueError('MCPFabric call failed; check the game and host MCP configuration')
         return json.loads(result.stdout)
@@ -209,5 +208,10 @@ if __name__ == '__main__':
             lock.write(b'0')
             lock.flush()
         lock.seek(0)
-        msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+        if os.name == 'nt':
+            import msvcrt
+            msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         Companion(root, options.host_token).run()

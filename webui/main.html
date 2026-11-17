@@ -5,9 +5,9 @@
 
   <title>Minecraft</title>
 
-  <script type="module" src="/plugins/minecraft_control/webui/store.js?v=0.6.0"></script>
+  <script type="module" src="/plugins/minecraft_control/webui/store.js?v=0.6.1"></script>
 
-  <link rel="stylesheet" href="/plugins/minecraft_control/webui/style.css?v=0.6.0">
+  <link rel="stylesheet" href="/plugins/minecraft_control/webui/style.css?v=0.6.1">
 
 </head>
 
@@ -35,7 +35,7 @@
 
   <div class="mc-connection">
 
-    <button class="button" x-show="!$store.minecraft.state.online" :disabled="$store.minecraft.sending || !$store.minecraft.state.launcher?.ready" @click="$store.minecraft.send('connect')" x-text="$store.minecraft.action === 'connect' ? 'Connectingâ€¦' : 'Connect'"></button>
+    <button class="button" x-show="!$store.minecraft.state.online" :disabled="$store.minecraft.sending || !$store.minecraft.state.launcher?.ready" @click="$store.minecraft.send('connect')" x-text="$store.minecraft.action === 'connect' ? 'Connecting…' : 'Connect'"></button>
 
     <button class="button" x-show="$store.minecraft.state.online" :disabled="$store.minecraft.sending" @click="$store.minecraft.send('disconnect')">Disconnect</button>
 
@@ -63,7 +63,7 @@
       </select>
       <p>For Realms, choose the Realm's version. Close Minecraft Launcher before installing.</p>
       <div class="mc-actions">
-        <button class="button" :disabled="$store.minecraft.sending || $store.minecraft.state.online || !$store.minecraft.version || !$store.minecraft.state.setup?.profiles?.launcher_ready || !!$store.minecraft.profile()" @click="$store.minecraft.send('install_profile')" x-text="$store.minecraft.action === 'install_profile' ? 'Installing profileâ€¦' : ($store.minecraft.profile() ? 'Profile installed' : 'Install profile')"></button>
+        <button class="button" :disabled="$store.minecraft.sending || $store.minecraft.state.online || !$store.minecraft.version || !$store.minecraft.state.setup?.profiles?.launcher_ready || !!$store.minecraft.profile()" @click="$store.minecraft.send('install_profile')" x-text="$store.minecraft.action === 'install_profile' ? 'Installing profile…' : ($store.minecraft.profile() ? 'Profile installed' : 'Install profile')"></button>
         <button class="button" :disabled="$store.minecraft.sending || !$store.minecraft.state.launcher?.ready || $store.minecraft.state.online" @click="$store.minecraft.send('open_launcher')">Open Minecraft Launcher</button>
       </div>
       <p x-show="!$store.minecraft.profile()">Installs Fabric, Fabric API, and MCPFabric in a separate Agent Zero profile.</p>
@@ -72,8 +72,8 @@
       <p x-show="$store.minecraft.profile()">Minecraft's modified-installation notice is expected for this Fabric profile.</p>
     </div>
     <div class="mc-actions">
-      <button class="button" :disabled="$store.minecraft.sending || !$store.minecraft.state.launcher?.ready || $store.minecraft.state.online" @click="$store.minecraft.send('profile_versions')" x-text="$store.minecraft.action === 'profile_versions' ? 'Checking setupâ€¦' : 'Check setup'"></button>
-      <button class="button" x-show="$store.minecraft.state.setup?.can_install && !$store.minecraft.state.setup?.server" :disabled="$store.minecraft.sending || $store.minecraft.state.online" @click="$store.minecraft.send('install_server')" x-text="$store.minecraft.action === 'install_server' ? 'Installing serverâ€¦' : 'Install MCP server'"></button>
+      <button class="button" :disabled="$store.minecraft.sending || !$store.minecraft.state.launcher?.ready || $store.minecraft.state.online" @click="$store.minecraft.send('profile_versions')" x-text="$store.minecraft.action === 'profile_versions' ? 'Checking setup…' : 'Check setup'"></button>
+      <button class="button" x-show="$store.minecraft.state.setup?.can_install && !$store.minecraft.state.setup?.server" :disabled="$store.minecraft.sending || $store.minecraft.state.online" @click="$store.minecraft.send('install_server')" x-text="$store.minecraft.action === 'install_server' ? 'Installing server…' : 'Install MCP server'"></button>
     </div>
     <dl x-show="$store.minecraft.state.setup?.package">
       <dt>Node.js</dt><dd x-text="$store.minecraft.state.setup?.node ? $store.minecraft.state.setup.node_version : 'Missing or too old'"></dd>
@@ -90,9 +90,9 @@
 
     <div><dt>Position</dt><dd x-text="$store.minecraft.coordinates()"></dd></div>
 
-    <div><dt>Health</dt><dd x-text="$store.minecraft.state.player?.health ?? 'â€”'"></dd></div>
+    <div><dt>Health</dt><dd x-text="$store.minecraft.state.player?.health ?? '—'"></dd></div>
 
-    <div><dt>Food</dt><dd x-text="$store.minecraft.state.player?.food ?? 'â€”'"></dd></div>
+    <div><dt>Food</dt><dd x-text="$store.minecraft.state.player?.food ?? '—'"></dd></div>
 
   </dl>
 

@@ -20,7 +20,7 @@ async def call_tool(context, tool, params):
             raise ValueError('No active Minecraft request')
         run = RUN
     if not launcher.snapshot()['online']:
-        raise ValueError('Windows companion is offline')
+        raise ValueError('Host companion is offline')
     if tool == 'list':
         return launcher.TOOLS
     if tool not in {item['name'] for item in launcher.TOOLS} or not isinstance(params, dict):
@@ -92,7 +92,7 @@ async def submit(action, prompt, context_id, chat_reply=False):
         await launcher.stop_game(run)
         return {'ok':True}
     if not launcher.snapshot()['online']:
-        raise ValueError('Windows companion is offline')
+        raise ValueError('Host companion is offline')
     with LOCK:
         if action != 'build' or not isinstance(context_id, str) or not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 12000:
             raise ValueError('Invalid request')

@@ -26,4 +26,14 @@ class DependenciesTest(unittest.TestCase):
             with self.assertRaises(ValueError):deps.install(Path('unused'))
             run.assert_not_called()
 
+    @unittest.skipIf(os.name == 'nt', 'POSIX npm symlink layout')
+    def test_linux_node_and_npm_symlink_are_detected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);npm=root/'lib/node_modules/npm/bin/npm-cli.js'
+            npm.parent.mkdir(parents=True);npm.write_text('')
+            link=root/'npm';link.symlink_to(npm)
+            with patch.object(deps.shutil,'which',side_effect=lambda name:str(root/name)),patch.object(deps.subprocess,'check_output',return_value='v22.22.3\n'):
+                self.assertEqual(deps.npm_cli(str(root/'node')),npm)
+                self.assertTrue(deps.inspect(root)['can_install'])
+
 if __name__=='__main__':unittest.main()

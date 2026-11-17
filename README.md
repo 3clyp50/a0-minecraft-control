@@ -1,12 +1,12 @@
 # Minecraft
 
-Agent Zero native Minecraft control: one right-canvas rail entry, with Launcher managing the Windows connection. Agent Zero can run locally or on a VPS. No shared folder, port forwarding, or public Minecraft bridge is needed.
+Agent Zero native Minecraft control: one right-canvas rail entry, with Launcher managing the host connection. Agent Zero can run locally or on a VPS. No shared folder, port forwarding, or public Minecraft bridge is needed.
 
 ![Minecraft panel after a verified build](webui/preview.jpg)
 
 ## Install the plugin
 
-Requires an Agent Zero build with the Plugin Hub, model presets, and Launcher Host gateway, plus Agent Zero Launcher on the Windows computer running Minecraft. The browser alone cannot provide the Windows host connection. Minecraft Java Edition ownership and a supported MCPFabric release are required.
+Requires an Agent Zero build with the Plugin Hub, model presets, and Launcher Host gateway, plus Agent Zero Launcher on the computer running Minecraft. The browser alone cannot provide the host connection. Minecraft Java Edition ownership and a supported MCPFabric release are required.
 
 In Agent Zero's Plugin Hub, install from this repository URL:
 
@@ -16,7 +16,7 @@ Enable **Minecraft**, select a chat, and open its icon in the right canvas rail.
 
 ## First connection
 
-1. Open the Agent Zero instance in Launcher on the Windows computer that runs Minecraft. For a VPS, use its HTTPS URL and sign in normally.
+1. Open the Agent Zero instance in Launcher on the computer that runs Minecraft. For a VPS, use its HTTPS URL and sign in normally.
 2. Enable Launcher Host access: Files, Read & write, and Code execution. Keep that instance tab open.
 3. Select an Agent Zero chat and open **Minecraft** from the right canvas rail. Setup detects your host and loads matching stable Minecraft versions.
 4. If missing, install [Minecraft Launcher](https://www.minecraft.net/download), open Java Edition once, then close the launcher. Install [Node.js 22.16+ with npm](https://nodejs.org/en/download) if Setup requests it, then restart Agent Zero Launcher.
@@ -30,27 +30,27 @@ Existing CurseForge profiles with Fabric and MCPFabric still work with Connect. 
 
 Sign in to Minecraft Launcher with the Microsoft account that has your Minecraft license and Realm access. Existing single-player worlds are not copied into the new profile; the new profile has its own world folder.
 
-Official sources: [Fabric on Windows](https://docs.fabricmc.net/players/installing-fabric/windows), [Fabric launch metadata](https://meta.fabricmc.net/), [Modrinth release metadata](https://docs.modrinth.com/api/operations/getprojectversions/), and [manual MCPFabric setup](https://github.com/denfry/mcpfabric#quick-start).
+Official sources: [Fabric installation](https://docs.fabricmc.net/players/installing-fabric/), [Fabric launch metadata](https://meta.fabricmc.net/), [Modrinth release metadata](https://docs.modrinth.com/api/operations/getprojectversions/), and [manual MCPFabric setup](https://github.com/denfry/mcpfabric#quick-start).
 
 ## Profile installation and preservation
 
 The installer offers only stable Minecraft releases with matching stable Fabric API and MCPFabric files. It selects a compatible stable Fabric Loader (0.19.5+), uses the Java runtime specified by Mojang's release metadata, verifies both mods with Modrinth's SHA-512 hashes, and verifies Fabric libraries with published SHA-256 hashes. Downloads use fixed official HTTPS hosts; additional unrecognized required mods stop installation with guidance.
 
-The profile's game directory is `%LOCALAPPDATA%/AgentZero/MinecraftProfiles/<instance-id>/<version>/game`. Its mods, worlds, settings, and installation record remain outside the disposable companion cache. Minecraft Launcher gets a separate custom profile and Fabric version. Necessary official libraries and base-version metadata are added only when absent; existing files are never silently replaced.
+The profile's game directory is `<host-data-dir>/AgentZero/MinecraftProfiles/<instance-id>/<version>/game`. On Linux, `<host-data-dir>` is `$XDG_DATA_HOME` or `~/.local/share`; on macOS it is `~/Library/Application Support`. Other hosts use their standard per-user application-data directory. Its mods, worlds, settings, and installation record remain outside the disposable companion cache. Minecraft Launcher gets a separate custom profile and Fabric version. Necessary official libraries and base-version metadata are added only when absent; existing files are never silently replaced.
 
-Close Minecraft Launcher before installation. The installer checks both Store and desktop launcher processes, copies each existing launcher profile configuration to a uniquely named `.agent-zero-<id>.bak` beside it, and preserves all existing profiles and settings. If settings change during installation, it stops instead of overwriting them. A failed registration can be retried; repeated installation does not duplicate the profile or replace worlds/modifications. Modified mods are preserved and require manual repair.
+Close Minecraft Launcher before installation. The installer checks running launcher processes, copies each existing launcher profile configuration to a uniquely named `.agent-zero-<id>.bak` beside it, and preserves all existing profiles and settings. If settings change during installation, it stops instead of overwriting them. A failed registration can be retried; repeated installation does not duplicate the profile or replace worlds/modifications. Modified mods are preserved and require manual repair.
 
 Uninstalling this plugin **preserves generated Minecraft profiles and worlds**, along with shared launcher libraries and backups. Remove a profile through Minecraft Launcher only when you no longer want it. The installer does not change your CurseForge installation, copy existing worlds, or transfer Microsoft credentials.
 
-For Realms, match the Realm's current version. Client placement and movement work through MCPFabric; server-only tools require an integrated or dedicated modded server. Realms cannot host this server mod. Operator access permits slash commands through chat when you explicitly request them; it does not enable server-side MCP tools. New Minecraft releases appear in Setup only after compatible stable Fabric API and MCPFabric releases exist.
+For Realms, match the Realm's current version. Client placement and movement work through MCPFabric; server-only tools require an integrated or dedicated modded server. Realms cannot host this server mod. Operator access permits slash commands through chat when you explicitly request them; it does not enable server-side MCP tools. Single-player worlds need **Allow Commands** enabled for commands such as `/give`. A sent-command acknowledgment confirms dispatch only; check game feedback and inventory or block readback to verify the result. New Minecraft releases appear in Setup only after compatible stable Fabric API and MCPFabric releases exist.
 
 ## What gets installed
 
-Lifecycle hooks create the server-side instance identity and, when Launcher host access is available, prepare the Windows helper and install a missing MCP server if Node/npm is ready. If the host is unavailable at plugin installation, the same host setup is completed from the panel when it connects. The Install MCP server button uses that lifecycle helper.
+Lifecycle hooks create the server-side instance identity and, when Launcher host access is available, prepare the host helper and install a missing MCP server if Node/npm is ready. If the host is unavailable at plugin installation, the same host setup is completed from the panel when it connects. The Install MCP server button uses that lifecycle helper.
 
-Windows files live under `%LOCALAPPDATA%/AgentZero/Minecraft/<instance-id>/`. The pinned npm package is `mcpfabric-mcp-server@0.10.0`; installation stays in that plugin-owned directory, uses the official npm registry, and disables package lifecycle scripts. Existing Node.js, Java, Minecraft profiles, worlds, and other applications' dependencies are preserved. An existing MCPFabric server entry in `.codex/config.toml` can be reused, but Codex CLI/configuration is not required when using the plugin-owned installation.
+Host helper files live under `<host-data-dir>/AgentZero/Minecraft/<instance-id>/`. The pinned npm package is `mcpfabric-mcp-server@0.10.0`; installation stays in that plugin-owned directory, uses the official npm registry, and disables package lifecycle scripts. Existing Node.js, Java, Minecraft profiles, worlds, and other applications' dependencies are preserved. An existing MCPFabric server entry in `.codex/config.toml` can be reused, but Codex CLI/configuration is not required when using the plugin-owned installation.
 
-Launcher supplies the Windows Python execution environment. The plugin deploys its small host helper over Launcher's existing authenticated connection; it never uploads model credentials. MCPFabric's discovery file and bearer token stay on Windows. `host.log` and `install.log` in the Windows cache contain setup diagnostics.
+Launcher supplies the host Python execution environment. The plugin deploys its small host helper over Launcher's existing authenticated connection; it never uploads model credentials. MCPFabric's discovery file and bearer token stay on your computer. `host.log` and `install.log` in the host cache contain setup diagnostics.
 
 ## Controls and models
 
@@ -60,14 +60,14 @@ The **Models** setting selects an Agent Zero model preset; it does not select a 
 
 ## In-game requests and settings
 
-With **In-game requests Ã‚Â· @a0** enabled, select an Agent Zero chat and click Connect. Type `@a0` followed by your request in Minecraft chat. The relay uses the chat selected at connection time and the same model-preset settings as panel requests. Reconnect to bind another chat. Only your own player chat is accepted; `@Codex`, `@ai`, whispers, other players, and messages sent before connection are ignored. Requests received while busy are rejected with local feedback instead of queued or replayed. Completion feedback is local to your Minecraft client; your typed request still follows the server's normal chat visibility. This is the plugin's native relay and does not require Codex CLI.
+With **In-game requests · @a0** enabled, select an Agent Zero chat and click Connect. Type `@a0` followed by your request in Minecraft chat. The relay uses the chat selected at connection time and the same model-preset settings as panel requests. Reconnect to bind another chat. Only your own player chat is accepted; `@Codex`, `@ai`, whispers, other players, and messages sent before connection are ignored. Requests received while busy are rejected with local feedback instead of queued or replayed. Completion feedback is local to your Minecraft client; your typed request still follows the server's normal chat visibility. This is the plugin's native relay and does not require Codex CLI.
 
 Minecraft settings provide:
 
 - **Models**: inherit the bound chat or choose an existing preset.
 - **Close pause menu automatically**: enabled by default. Resumes at request start and before player actions or screenshots. It only closes an in-world pause screen, respects MCPFabric's AI pause switch, and leaves chat, inventories, death screens, and world-selection screens alone.
 - **Verify builds with screenshots**: enabled by default. Instructs the agent to combine block readback with a screenshot inspected through vision after changing blocks. This requires a vision-capable preset; it does not replace authoritative block readback.
-- **In-game requests Ã‚Â· @a0**: enables the relay while connected. Turning it off discards pending chat requests. Re-enabling starts with fresh messages.
+- **In-game requests · @a0**: enables the relay while connected. Turning it off discards pending chat requests. Re-enabling starts with fresh messages.
 
 Generated profiles start with `pauseOnLostFocus:false`, so Minecraft keeps rendering while Agent Zero is in front. Existing profile preferences are preserved; use F3+P in-game once when the plugin reports that Minecraft immediately paused again. This preference is separate from the automatic menu-closing setting.
 
@@ -75,13 +75,13 @@ The Setup accordion preserves your open/closed choice while status refreshes.
 
 ## Transport and cleanup
 
-Tool requests, status, and results cross the existing Launcher gateway. The Windows companion uses a private local queue; the server never reads or writes that queue. Large results, including screenshots, use bounded chunks with size and SHA-256 verification, capped at 32 MiB. Results are saved to Agent Zero's normal chat-media storage for vision. Failed or uncertain game actions are never replayed automatically.
+Tool requests, status, and results cross the existing Launcher gateway. The host companion uses a private local queue; the server never reads or writes that queue. Large results, including screenshots, use bounded chunks with size and SHA-256 verification, capped at 32 MiB. Results are saved to Agent Zero's normal chat-media storage for vision. Failed or uncertain game actions are never replayed automatically.
 
-The bridge remains bound to 127.0.0.1 on Windows. There is no new public listener. The plugin exposes the same 36 enabled MCPFabric tools and preserves its argument validation, mod pause controls, reach, game permissions, and Agent Zero tool policy. Game text remains untrusted data.
+The bridge remains bound to 127.0.0.1 on your computer. There is no new public listener. The plugin exposes the same 36 enabled MCPFabric tools and preserves its argument validation, mod pause controls, reach, game permissions, and Agent Zero tool policy. Game text remains untrusted data.
 
-Heartbeat renewal is bound to the exact authorized Launcher session. The companion stops when its host-local lease expires (30 seconds without renewal); an already dispatched call may finish before controls are released. Disconnect cannot undo completed changes. Server and Windows clocks need not agree.
+Heartbeat renewal is bound to the exact authorized Launcher session. The companion stops when its host-local lease expires (30 seconds without renewal); an already dispatched call may finish before controls are released. Disconnect cannot undo completed changes. Server and host clocks need not agree.
 
-Uninstall attempts to stop the connected companion and remove its instance-specific Windows cache, including only its own npm installation. Server-side identity/state is removed. If Windows is offline or the server has restarted and no host connection has been established, remote files cannot be removed at that moment: the companion still expires, and the instance-specific cache can be removed from the Windows folder above. Shared dependencies, profiles, worlds, presets, and credentials remain untouched.
+Uninstall attempts to stop the connected companion and remove its instance-specific host cache, including only its own npm installation. Server-side identity/state is removed. If the host is offline or the server has restarted and no host connection has been established, remote files cannot be removed at that moment: the companion still expires, and the instance-specific cache can be removed from the host folder above. Shared dependencies, profiles, worlds, presets, and credentials remain untouched.
 
 ## Thumbnail
 
@@ -91,13 +91,14 @@ Prompt: Use case: stylized-concept. Asset type: square thumbnail for an Agent Ze
 
 ## Development and verification
 
-The Windows host tests use Python's standard library:
+The standalone host tests use Python's standard library:
 
-```powershell
+```bash
 python -m unittest discover -s tests -p test_controller.py
 python -m unittest discover -s tests -p test_dependencies.py
 python -m unittest discover -s tests -p test_host.py
 python -m unittest discover -s tests -p test_profiles.py
+python -m unittest discover -s tests -p test_paths.py
 node tests/test_store.mjs
 node tests/test_setup_store.mjs
 node tests/test_config_store.mjs
@@ -105,9 +106,9 @@ node tests/test_config_store.mjs
 
 Run the remaining Python tests from Agent Zero's framework environment, with this plugin installed as `usr/plugins/minecraft_control`. They exercise native model resolution, task scope, lifecycle hooks, authorization, and gateway transport. CI runs the standalone host/UI tests; it does not launch Minecraft or require provider credentials.
 
-Verified on Windows with Minecraft 26.3, Fabric Loader 0.20.1, Fabric API 0.166.2+26.3, MCPFabric 0.10.0+26.3, and Java 25 metadata. The regression suite covers preserved profiles/worlds, backups, repeat installation, interrupted registration, checksums, path bounds, launcher races, authorization, task isolation, lease expiry, and chunked screenshot transfer. Native Codex OAuth and an OpenRouter preset have both been exercised. A final request started from the Minecraft panel using the Default preset built a three-block stone marker in the generated profile; independent block readback confirmed all three placements. A native `@a0` request using Default also placed one stone through normal player interaction, verified by independent block readback, screenshot transfer, and vision loading. The 0.6.0 live checks additionally confirmed that the screenshot tool closes a real pause menu and returns the unobscured world, settings survive saving and reopening, and the Setup accordion retains both open and closed states across status polls. The automated suite includes 51 Python tests across the framework and Windows environments and three Node UI checks.
+The host helper uses platform-specific application paths, launcher detection, and process locking. CI exercises host and UI checks across the desktop OS matrix. The regression suite covers preserved profiles/worlds, backups, repeat installation, interrupted registration, checksums, path bounds, launcher races, authorization, task isolation, lease expiry, and chunked screenshot transfer.
 
-Agent Zero and Minecraft were tested on separate container/Windows filesystems with no shared-folder transport. An actual public VPS deployment, internet latency, and TLS/reverse-proxy configuration have not been tested.
+Live verification uses the official Minecraft Launcher, a separate Agent Zero profile, and the existing Launcher Host gateway. The user confirmed successful build and inventory-command checks on Linux with the generated Minecraft 26.3 profile. Check both a build request with independent block readback and screenshot inspection, and an explicitly requested slash command with inventory readback. A public VPS deployment, internet latency, and TLS/reverse-proxy configuration require separate deployment testing.
 
 ## License and acknowledgments
 

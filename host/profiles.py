@@ -1,4 +1,4 @@
-import csv, io, json, hashlib, os, re, shutil, subprocess, tempfile, time, uuid, zipfile
+import csv, io, json, hashlib, os, re, runpy, shutil, subprocess, sys, tempfile, time, uuid, zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
@@ -24,7 +24,7 @@ def fetch(url, limit=8*1024*1024):
         if len(data)>limit:raise ValueError('Minecraft download exceeds its size limit')
         return data
     except OSError as error:
-        raise ValueError('Could not download Minecraft components. Check your Windows internet connection and retry.') from error
+        raise ValueError('Could not download Minecraft components. Check your host internet connection and retry.') from error
 
 
 def metadata(url):
@@ -40,10 +40,11 @@ def game_version(value):
 def paths(root):
     instance=root.name
     if not re.fullmatch('[a-f0-9]{32}',instance):raise ValueError('Invalid plugin instance')
-    base=(Path(os.environ['LOCALAPPDATA'])/'AgentZero/MinecraftProfiles').resolve()
+    host_paths=runpy.run_path(str(Path(__file__).with_name('paths.py')))
+    base=host_paths['data_root']('MinecraftProfiles')
     profiles=(base/instance).resolve()
     if profiles.parent!=base:raise ValueError('Invalid Minecraft profile path')
-    return Path(os.environ['APPDATA'])/'.minecraft', profiles
+    return host_paths['minecraft_dir'](), profiles
 
 
 def launcher_files(minecraft):
@@ -51,9 +52,11 @@ def launcher_files(minecraft):
 
 
 def launcher_closed():
-    result=subprocess.run(['tasklist.exe','/FI','IMAGENAME eq Minecraft*','/FO','CSV','/NH'],capture_output=True,text=True,timeout=10,creationflags=subprocess.CREATE_NO_WINDOW)
+    command=['tasklist.exe','/FI','IMAGENAME eq Minecraft*','/FO','CSV','/NH'] if os.name=='nt' else ['ps','-A','-o','comm=']
+    result=subprocess.run(command,capture_output=True,text=True,timeout=10,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     if result.returncode:raise ValueError('Could not check Minecraft Launcher. Close it and retry.')
-    if any(row and row[0].lower() in ('minecraftlauncher.exe','minecraft.exe') for row in csv.reader(io.StringIO(result.stdout))):
+    names=[row[0].lower() for row in csv.reader(io.StringIO(result.stdout)) if row] if os.name=='nt' else [line.strip().lower() for line in result.stdout.splitlines()]
+    if any(Path(name).name in ('minecraftlauncher.exe','minecraft.exe','minecraft-launcher','minecraft-launc','minecraft launcher') or '/minecraft.app/contents/macos/' in name for name in names):
         raise ValueError('Close Minecraft Launcher, then click Install profile again.')
 
 
@@ -232,6 +235,13 @@ def install(root, version):
 
 
 def open_launcher():
+    if sys.platform=='darwin':
+        subprocess.Popen(['open','-a','Minecraft']);return {'ok':True}
+    if os.name!='nt':
+        exe=shutil.which('minecraft-launcher')
+        if exe:
+            subprocess.Popen([exe],start_new_session=True);return {'ok':True}
+        raise ValueError('Install Minecraft Launcher from minecraft.net/download, then open Java Edition once.')
     candidates=[Path(os.environ.get('ProgramFiles(x86)','C:/Program Files (x86)'))/'Minecraft Launcher/MinecraftLauncher.exe',Path(os.environ.get('ProgramFiles','C:/Program Files'))/'Minecraft Launcher/MinecraftLauncher.exe']
     for exe in candidates:
         if exe.is_file():subprocess.Popen([str(exe)]);return {'ok':True}

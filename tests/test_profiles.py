@@ -15,7 +15,8 @@ class ProfilesTest(unittest.TestCase):
  def setUp(self):
   self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
   self.base=Path(self.temp.name);self.root=self.base/('a'*32);self.root.mkdir()
-  self.env=patch.dict(os.environ,{'LOCALAPPDATA':str(self.base/'local'),'APPDATA':str(self.base/'roaming')});self.env.start();self.addCleanup(self.env.stop)
+  self.env=patch.dict(os.environ,{'LOCALAPPDATA':str(self.base/'local'),'APPDATA':str(self.base/'roaming'),'XDG_DATA_HOME':str(self.base/'local')});self.env.start();self.addCleanup(self.env.stop)
+  home=patch.object(Path,'home',return_value=self.base/'home');home.start();self.addCleanup(home.stop)
   self.minecraft,self.owned=profiles.paths(self.root);self.minecraft.mkdir(parents=True)
   self.original={'profiles':{'old':{'name':'My world','gameDir':'unchanged','lastVersionId':'1.21.1'}},'settings':{'keep':True},'version':3}
   self.config=self.minecraft/'launcher_profiles.json';self.config.write_text(json.dumps(self.original))
@@ -97,8 +98,16 @@ class CatalogTest(unittest.TestCase):
    data=profiles.catalog(Path(temp));self.assertEqual(data['versions'],['26.3']);self.assertEqual(data['recommended'],'26.3')
  def test_running_launcher_is_rejected(self):
   from types import SimpleNamespace
-  for name in ('MinecraftLauncher.exe','Minecraft.exe'):
-   with patch.object(profiles.subprocess,'CREATE_NO_WINDOW',0,create=True),patch.object(profiles.subprocess,'run',return_value=SimpleNamespace(returncode=0,stdout='"'+name+'","123"')):
-    with self.assertRaisesRegex(ValueError,'Close Minecraft Launcher'):profiles.launcher_closed()
+  for system,names in [('nt',('MinecraftLauncher.exe','Minecraft.exe')),('posix',('minecraft-launcher','minecraft-launc','/Applications/Minecraft.app/Contents/MacOS/launcher'))]:
+   for name in names:
+    output='"'+name+'","123"' if system=='nt' else name+'\n'
+    with patch.object(profiles,'os',SimpleNamespace(name=system)),patch.object(profiles.subprocess,'run',return_value=SimpleNamespace(returncode=0,stdout=output)):
+     with self.assertRaisesRegex(ValueError,'Close Minecraft Launcher'):profiles.launcher_closed()
+
+ def test_linux_launcher_uses_installed_executable(self):
+  from types import SimpleNamespace
+  with patch.object(profiles,'sys',SimpleNamespace(platform='linux')),patch.object(profiles,'os',SimpleNamespace(name='posix')),patch.object(profiles.shutil,'which',return_value='/usr/bin/minecraft-launcher'),patch.object(profiles.subprocess,'Popen') as launch:
+   self.assertEqual(profiles.open_launcher(),{'ok':True})
+   launch.assert_called_once_with(['/usr/bin/minecraft-launcher'],start_new_session=True)
 
 if __name__=='__main__':unittest.main()
