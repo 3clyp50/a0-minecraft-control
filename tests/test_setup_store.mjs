@@ -17,8 +17,4 @@ assert.equal(timers,1);assert.equal(calls.filter(v=>v.action==='profile_versions
 store.version='26.2';await store.send('install_profile');
 assert.equal(calls.find(v=>v.action==='install_profile').version,'26.2');assert.equal(store.profile().name,'Agent Zero 26.2');assert.equal(toasts.length,1);assert.equal(store.sending,false);
 store.cleanup();assert.equal(store.timer,null);
-assert.equal(store.setupOpen,true);
-state.online=true;await store.refresh();assert.equal(store.setupOpen,true);
-store.setupOpen=false;await store.refresh();assert.equal(store.setupOpen,false);
-state.online=false;await store.refresh();assert.equal(store.setupOpen,false);
 console.log('Profile setup and installation UI checks passed');

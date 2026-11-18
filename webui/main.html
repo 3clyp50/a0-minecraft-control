@@ -5,9 +5,9 @@
 
   <title>Minecraft</title>
 
-  <script type="module" src="/plugins/minecraft_control/webui/store.js?v=0.6.1"></script>
+  <script type="module" src="/plugins/minecraft_control/webui/store.js?v=0.6.2"></script>
 
-  <link rel="stylesheet" href="/plugins/minecraft_control/webui/style.css?v=0.6.1">
+  <link rel="stylesheet" href="/plugins/minecraft_control/webui/style.css?v=0.6.2">
 
 </head>
 
@@ -51,8 +51,8 @@
 
   </section>
 
-  <details class="mc-setup" :open="$store.minecraft.setupOpen" @toggle="$store.minecraft.setupOpen = $event.target.open">
-    <summary>Setup</summary>
+  <section class="mc-setup" aria-labelledby="mc-setup-title">
+    <strong id="mc-setup-title">Setup</strong>
     <div class="mc-profile">
       <strong>Minecraft profile</strong>
       <p x-show="!$store.minecraft.state.setup?.profiles?.launcher_ready">Install <a href="https://www.minecraft.net/download" target="_blank" rel="noopener noreferrer">Minecraft Launcher</a>, open Java Edition once, then close the launcher.</p>
@@ -83,7 +83,7 @@
     <p x-show="!$store.minecraft.state.setup?.node">Install <a href="https://nodejs.org/en/download" target="_blank" rel="noopener noreferrer">Node.js 22.16+</a> with npm, then restart Agent Zero Launcher and check setup.</p>
     <p x-show="$store.minecraft.state.online">Disconnect to change setup.</p>
     <a href="https://github.com/denfry/mcpfabric#quick-start" target="_blank" rel="noopener noreferrer">Manual MCPFabric setup</a>
-  </details>
+  </section>
   <p class="mc-setup" x-show="$store.minecraft.state.online && !$store.minecraft.state.player?.dimension">Launch Minecraft with MCPFabric, then join a world.</p>
 
   <dl class="mc-stats" x-show="$store.minecraft.state.online">

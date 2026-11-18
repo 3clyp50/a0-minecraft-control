@@ -7,6 +7,6 @@
 
 .mc-setup{font-size:.85rem;line-height:1.5}.mc-setup ol{padding-left:1.2rem;margin:.5rem 0}.mc-setup li+li{margin-top:.35rem}.mc-connection{display:flex;justify-content:flex-end}
 
-.mc-panel{overflow-y:auto}.mc-setup a{color:var(--color-text);text-decoration:underline}.mc-setup summary{cursor:pointer;font-weight:600}.mc-setup dd{margin:0 0 .4rem;opacity:.75}
+.mc-panel{overflow-y:auto}.mc-setup a{color:var(--color-text);text-decoration:underline}.mc-setup dd{margin:0 0 .4rem;opacity:.75}
 
 .mc-profile{display:flex;flex-direction:column;gap:.6rem;margin:1rem 0}.mc-profile p{margin:0}.mc-profile select{background:var(--color-input,#222);color:inherit;border:1px solid var(--color-border,#444);border-radius:6px;padding:.65rem;font:inherit}.mc-profile select:focus-visible{outline:2px solid var(--color-text);outline-offset:3px}

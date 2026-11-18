@@ -71,8 +71,6 @@ Minecraft settings provide:
 
 Generated profiles start with `pauseOnLostFocus:false`, so Minecraft keeps rendering while Agent Zero is in front. Existing profile preferences are preserved; use F3+P in-game once when the plugin reports that Minecraft immediately paused again. This preference is separate from the automatic menu-closing setting.
 
-The Setup accordion preserves your open/closed choice while status refreshes.
-
 ## Transport and cleanup
 
 Tool requests, status, and results cross the existing Launcher gateway. The host companion uses a private local queue; the server never reads or writes that queue. Large results, including screenshots, use bounded chunks with size and SHA-256 verification, capped at 32 MiB. Results are saved to Agent Zero's normal chat-media storage for vision. Failed or uncertain game actions are never replayed automatically.

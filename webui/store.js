@@ -5,7 +5,7 @@ import { renderSafeMarkdown } from '/js/safe-markdown.js';
 import { store as pluginSettings } from '/components/plugins/plugin-settings-store.js';
 
 export const store = createStore('minecraft', {
-    state: {}, prompt: '', tab: 'console', timer: null, loading: false, sending: false, action: '', version: '', setupOpen: null,
+    state: {}, prompt: '', tab: 'console', timer: null, loading: false, sending: false, action: '', version: '',
     profile() { return this.state.setup?.profiles?.installed?.find(item => item.game_version === this.version); },
     outputHtml() { return renderSafeMarkdown(this.state.output || '—'); },
     settings() { return pluginSettings.openConfig('minecraft_control'); },
@@ -14,7 +14,6 @@ export const store = createStore('minecraft', {
         this.loading = true;
         try { this.state = await callJsonApi('/api/plugins/minecraft_control/control', {
             action: 'status', context_id: window.Alpine?.store('chats')?.selected || ''});
-            if (this.setupOpen === null) this.setupOpen = !this.state.online;
             if (!this.version) this.version = this.state.setup?.profiles?.recommended || '';
         }
         catch (error) { this.cleanup(); toastFrontendError(error.message, 'Minecraft'); }
